@@ -5,9 +5,9 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMPTZ NOT NULL,
     email TEXT NOT NULL,
     password_hash TEXT NOT NULL,
-    branch_id UUID NOT NULL
+    branch_id UUID NOT NULL,
     UNIQUE (email),
-    FOREIGN KEY (branch_id) REFERENCES branches(id)
+    FOREIGN KEY (branch_id) REFERENCES branches(id) on delete cascade
 );
 
 -- +goose Down

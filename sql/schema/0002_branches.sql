@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS branches (
     name TEXT NOT NULL,
     address TEXT NOT NULL,
     company_id UUID NOT NULL,
-    FOREIGN KEY (company_id) REFERENCES companies(id)
+    FOREIGN KEY (company_id) REFERENCES companies(id) on delete cascade
 );
 
 -- +goose Down
