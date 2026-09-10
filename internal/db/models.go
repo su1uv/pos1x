@@ -8,34 +8,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Branch struct {
-	ID        pgtype.UUID
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Name      string
-	Address   string
-	CompanyID pgtype.UUID
-}
-
-type Company struct {
-	ID        pgtype.UUID
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Name      string
-}
-
 type User struct {
 	ID           pgtype.UUID
 	CreatedAt    pgtype.Timestamptz
 	UpdatedAt    pgtype.Timestamptz
+	Name         string
+	LastName     string
 	Email        string
 	PasswordHash string
-	BranchID     pgtype.UUID
-}
-
-type Warehouse struct {
-	ID        pgtype.UUID
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Name      string
 }

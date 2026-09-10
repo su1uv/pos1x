@@ -12,36 +12,36 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-with inserted_user as (
-    insert into users (
-        id, created_at, updated_at, email, password_hash, branch_id
-    ) values (
-        $1, $2, $3, $4, $5, $6
-    ) returning id, created_at, updated_at, email, password_hash, branch_id
-) select
+insert into users (
+    id, created_at, updated_at, name, last_name, email, password_hash
+) values (
+    $1, $2, $3, $4, $5, $6, $7
+) returning
     id,
     created_at,
     updated_at,
-    email,
-    branch_id
-from inserted_user
+    name,
+    last_name,
+    email
 `
 
 type CreateUserParams struct {
 	ID           pgtype.UUID
 	CreatedAt    pgtype.Timestamptz
 	UpdatedAt    pgtype.Timestamptz
+	Name         string
+	LastName     string
 	Email        string
 	PasswordHash string
-	BranchID     pgtype.UUID
 }
 
 type CreateUserRow struct {
 	ID        pgtype.UUID
 	CreatedAt pgtype.Timestamptz
 	UpdatedAt pgtype.Timestamptz
+	Name      string
+	LastName  string
 	Email     string
-	BranchID  pgtype.UUID
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
@@ -49,98 +49,19 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		arg.ID,
 		arg.CreatedAt,
 		arg.UpdatedAt,
+		arg.Name,
+		arg.LastName,
 		arg.Email,
 		arg.PasswordHash,
-		arg.BranchID,
 	)
 	var i CreateUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Name,
+		&i.LastName,
 		&i.Email,
-		&i.BranchID,
-	)
-	return i, err
-}
-
-const getUsersByCompany = `-- name: GetUsersByCompany :many
-select
-    u.id,
-    u.created_at,
-    u.updated_at,
-    u.email,
-    u.branch_id
-from users u
-inner join branches b on b.id = u.branch_id
-where b.company_id = $1
-`
-
-type GetUsersByCompanyRow struct {
-	ID        pgtype.UUID
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
-	Email     string
-	BranchID  pgtype.UUID
-}
-
-func (q *Queries) GetUsersByCompany(ctx context.Context, companyID pgtype.UUID) ([]GetUsersByCompanyRow, error) {
-	rows, err := q.db.Query(ctx, getUsersByCompany, companyID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GetUsersByCompanyRow
-	for rows.Next() {
-		var i GetUsersByCompanyRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.Email,
-			&i.BranchID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const updateUser = `-- name: UpdateUser :one
-update users set
-    updated_at = $1,
-    email = $2,
-    branch_id = $3
-where id = $4
-returning id, created_at, updated_at, email, password_hash, branch_id
-`
-
-type UpdateUserParams struct {
-	UpdatedAt pgtype.Timestamptz
-	Email     string
-	BranchID  pgtype.UUID
-	ID        pgtype.UUID
-}
-
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, updateUser,
-		arg.UpdatedAt,
-		arg.Email,
-		arg.BranchID,
-		arg.ID,
-	)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Email,
-		&i.PasswordHash,
-		&i.BranchID,
 	)
 	return i, err
 }
