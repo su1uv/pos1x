@@ -65,3 +65,205 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 	)
 	return i, err
 }
+
+const deleteUser = `-- name: DeleteUser :exec
+delete from users where id = $1
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteUser, id)
+	return err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+select
+    id,
+    created_at,
+    updated_at,
+    name,
+    last_name,
+    email
+from users
+where email = $1
+`
+
+type GetUserByEmailRow struct {
+	ID        pgtype.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+	Name      string
+	LastName  string
+	Email     string
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i GetUserByEmailRow
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.LastName,
+		&i.Email,
+	)
+	return i, err
+}
+
+const getUserByEmailForAuth = `-- name: GetUserByEmailForAuth :one
+select
+    id,
+    email,
+    password_hash
+from users
+where email = $1
+`
+
+type GetUserByEmailForAuthRow struct {
+	ID           pgtype.UUID
+	Email        string
+	PasswordHash string
+}
+
+func (q *Queries) GetUserByEmailForAuth(ctx context.Context, email string) (GetUserByEmailForAuthRow, error) {
+	row := q.db.QueryRow(ctx, getUserByEmailForAuth, email)
+	var i GetUserByEmailForAuthRow
+	err := row.Scan(&i.ID, &i.Email, &i.PasswordHash)
+	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+select
+    id,
+    created_at,
+    updated_at,
+    name,
+    last_name,
+    email
+from users
+where id = $1
+`
+
+type GetUserByIDRow struct {
+	ID        pgtype.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+	Name      string
+	LastName  string
+	Email     string
+}
+
+func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (GetUserByIDRow, error) {
+	row := q.db.QueryRow(ctx, getUserByID, id)
+	var i GetUserByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.LastName,
+		&i.Email,
+	)
+	return i, err
+}
+
+const listUsers = `-- name: ListUsers :many
+select
+    id,
+    created_at,
+    updated_at,
+    name,
+    last_name,
+    email
+from users
+`
+
+type ListUsersRow struct {
+	ID        pgtype.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+	Name      string
+	LastName  string
+	Email     string
+}
+
+// TODO: Limit & pagination
+func (q *Queries) ListUsers(ctx context.Context) ([]ListUsersRow, error) {
+	rows, err := q.db.Query(ctx, listUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUsersRow
+	for rows.Next() {
+		var i ListUsersRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Name,
+			&i.LastName,
+			&i.Email,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateUser = `-- name: UpdateUser :one
+update users set
+    updated_at = $1,
+    name = $2,
+    last_name = $3,
+    email = $4
+where id = $5
+returning
+    id,
+    created_at,
+    updated_at,
+    name,
+    last_name,
+    email
+`
+
+type UpdateUserParams struct {
+	UpdatedAt pgtype.Timestamptz
+	Name      string
+	LastName  string
+	Email     string
+	ID        pgtype.UUID
+}
+
+type UpdateUserRow struct {
+	ID        pgtype.UUID
+	CreatedAt pgtype.Timestamptz
+	UpdatedAt pgtype.Timestamptz
+	Name      string
+	LastName  string
+	Email     string
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.UpdatedAt,
+		arg.Name,
+		arg.LastName,
+		arg.Email,
+		arg.ID,
+	)
+	var i UpdateUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.LastName,
+		&i.Email,
+	)
+	return i, err
+}
