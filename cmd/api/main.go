@@ -17,11 +17,18 @@ import (
 )
 
 func main() {
-	godotenv.Load()
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("error loading env vars: %v", err)
+	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 
-	port, _ := strconv.Atoi(os.Getenv("PORT"))
+	port, err := strconv.Atoi(os.Getenv("PORT"))
+	if err != nil {
+		log.Fatalf("error converting port to int: %v", err)
+	}
+
 	httpPort := flag.Int("port", port, "port listen on")
 	flag.Parse()
 
@@ -32,11 +39,11 @@ func main() {
 
 func run(ctx context.Context, cancel context.CancelFunc, httpPort int) int {
 	conn, err := pgx.Connect(ctx, fmt.Sprintf(
-		"host=%v port=%v user=%v password=%v dbname=%v",
-		os.Getenv("HOST"), os.Getenv("PORT"), os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRESS_PASSWORD"), os.Getenv("POSTGRES_DB"),
+		"postgres://%v:%v@%v:5432/%v?sslmode=disable",
+		os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD"), os.Getenv("HOST"), os.Getenv("POSTGRES_DB"),
 	))
 	if err != nil {
-		log.Fatal()
+		log.Fatalf("cannot connect to database: %v", err)
 	}
 	defer conn.Close(ctx)
 

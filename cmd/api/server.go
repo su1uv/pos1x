@@ -8,15 +8,16 @@ import (
 	"net/http"
 
 	"github.com/su1uv/pos1x/internal/db"
+	"github.com/su1uv/pos1x/internal/handlers"
+	"github.com/su1uv/pos1x/internal/services"
 )
 
-type Server struct {
+type server struct {
 	httpServer *http.Server
-	db         *db.Queries
 	cancel     context.CancelFunc
 }
 
-func newServer(port int, cancel context.CancelFunc, queries *db.Queries) *Server {
+func newServer(port int, cancel context.CancelFunc, queries *db.Queries) *server {
 	mux := http.NewServeMux()
 
 	srv := &http.Server{
@@ -24,18 +25,20 @@ func newServer(port int, cancel context.CancelFunc, queries *db.Queries) *Server
 		Handler: mux,
 	}
 
-	s := &Server{
+	s := &server{
 		httpServer: srv,
-		db:         queries,
 		cancel:     cancel,
 	}
 
-	// TODO: register endpoints
+	services := services.NewServices(queries)
+	h := handlers.NewHandlers(services)
+
+	mux.HandleFunc("GET /health", h.Health)
 
 	return s
 }
 
-func (s *Server) start() error {
+func (s *server) start() error {
 	ln, err := net.Listen("tcp", s.httpServer.Addr)
 	if err != nil {
 		return err
@@ -46,6 +49,6 @@ func (s *Server) start() error {
 	return nil
 }
 
-func (s *Server) shutdown(ctx context.Context) error {
+func (s *server) shutdown(ctx context.Context) error {
 	return s.httpServer.Shutdown(ctx)
 }
