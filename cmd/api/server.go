@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 
@@ -15,9 +16,10 @@ import (
 type server struct {
 	httpServer *http.Server
 	cancel     context.CancelFunc
+	logger     *slog.Logger
 }
 
-func newServer(port int, cancel context.CancelFunc, queries *db.Queries) *server {
+func newServer(port int, cancel context.CancelFunc, logger *slog.Logger, queries *db.Queries) *server {
 	mux := http.NewServeMux()
 
 	srv := &http.Server{
@@ -28,6 +30,7 @@ func newServer(port int, cancel context.CancelFunc, queries *db.Queries) *server
 	s := &server{
 		httpServer: srv,
 		cancel:     cancel,
+		logger:     logger,
 	}
 
 	services := services.NewServices(queries)
