@@ -15,5 +15,5 @@ func NewHandlers(services *services.Services) *Handlers {
 }
 
 func (h *Handlers) Health(w http.ResponseWriter, _ *http.Request) {
-	w.Write([]byte("Hello World!"))
+	respondWithJSON(w, 200, map[string]string{"status": "ok"})
 }
