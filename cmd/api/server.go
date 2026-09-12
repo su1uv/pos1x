@@ -11,6 +11,7 @@ import (
 	"github.com/su1uv/pos1x/internal/db"
 	"github.com/su1uv/pos1x/internal/handlers"
 	"github.com/su1uv/pos1x/internal/services"
+	nittyLogger "github.com/su1uv/pos1x/internal/logger"
 )
 
 type server struct {
@@ -24,7 +25,7 @@ func newServer(port int, cancel context.CancelFunc, logger *slog.Logger, queries
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
-		Handler: mux,
+		Handler: nittyLogger.LoggerMiddleware(logger)(mux),
 	}
 
 	s := &server{
@@ -34,7 +35,7 @@ func newServer(port int, cancel context.CancelFunc, logger *slog.Logger, queries
 	}
 
 	services := services.NewServices(queries)
-	h := handlers.NewHandlers(services)
+	h := handlers.NewHandlers(services, logger)
 
 	mux.HandleFunc("GET /health", h.Health)
 

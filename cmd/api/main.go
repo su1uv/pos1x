@@ -55,19 +55,23 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int) int {
 	s := newServer(httpPort, cancel, logger, queries)
 	var serverErr error
 	go func() {
+		logger.Info(fmt.Sprintf("server start on port: %d", httpPort))
 		serverErr = s.start()
 	}()
 
 	<-ctx.Done()
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer func() {
+		logger.Warn("shutdown server")
 		cancel()
 	}()
 
 	if err := s.shutdown(shutdownCtx); err != nil {
+		logger.Warn("shutdown server")
 		return 1
 	}
 	if serverErr != nil {
+		logger.Warn("shutdown server")
 		return 1
 	}
 	return 0
